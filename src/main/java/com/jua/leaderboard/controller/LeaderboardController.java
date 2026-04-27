@@ -18,7 +18,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"http://localhost:5173","https://player-leaderboard-frontend1.vercel.app/"})
 public class LeaderboardController {
 
     private final MatchService matchService;
