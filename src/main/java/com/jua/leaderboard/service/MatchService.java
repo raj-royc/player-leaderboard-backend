@@ -14,16 +14,29 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class MatchService {
 
-    @Lazy
     private final DiscordService discordService;
     private final MatchRepository matchRepository;
     private final PlayerRepository playerRepository;
     private final MatchResultRepository matchResultRepository;
     private final MatchAbsenceRepository matchAbsenceRepository;
     private final WeeklyBonusRepository weeklyBonusRepository;
+
+    public MatchService(MatchRepository matchRepository,
+                        PlayerRepository playerRepository,
+                        MatchResultRepository matchResultRepository,
+                        MatchAbsenceRepository matchAbsenceRepository,
+                        WeeklyBonusRepository weeklyBonusRepository,
+                        @Lazy DiscordService discordService) {
+        this.matchRepository = matchRepository;
+        this.playerRepository = playerRepository;
+        this.matchResultRepository = matchResultRepository;
+        this.matchAbsenceRepository = matchAbsenceRepository;
+        this.weeklyBonusRepository = weeklyBonusRepository;
+        this.discordService = discordService;
+    }
 
     @Transactional
     public void submitMatchResult(MatchSubmitRequestDTO request) {
