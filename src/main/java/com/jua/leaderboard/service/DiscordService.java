@@ -1,6 +1,7 @@
 package com.jua.leaderboard.service;
 
 import com.jua.leaderboard.dto.*;
+import jakarta.annotation.PostConstruct;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
 
 @Service
 public class DiscordService extends ListenerAdapter {
@@ -25,6 +27,10 @@ public class DiscordService extends ListenerAdapter {
         this.matchService = matchService;
     }
 
+    @PostConstruct
+    public void init() {
+        System.out.println("DiscordService initialized. Watching channel ID: " + channelId);
+    }
     @Autowired
     public void setJda(@Lazy JDA jda) {
         this.jda = jda;
@@ -62,6 +68,8 @@ public class DiscordService extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
+        System.out.println("Message received: " + event.getMessage().getContentRaw()
+                + " in channel: " + event.getChannel().getId());
         if (event.getAuthor().isBot()) return;
         if (!event.getChannel().getId().equals(channelId)) return;
 

@@ -24,6 +24,8 @@ public class DiscordConfig {
                 .build();
         jda.addEventListener(discordService);
         jda.awaitReady();
+
+        System.out.println("Discord bot connected as: " + jda.getSelfUser().getName());
         return jda;
     }
 }
