@@ -4,6 +4,7 @@ import com.jua.leaderboard.dto.*;
 import com.jua.leaderboard.entity.*;
 import com.jua.leaderboard.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MatchService {
 
+    @Lazy
+    private final DiscordService discordService;
     private final MatchRepository matchRepository;
     private final PlayerRepository playerRepository;
     private final MatchResultRepository matchResultRepository;
@@ -79,6 +82,20 @@ public class MatchService {
         if (Boolean.TRUE.equals(request.getIsLastGameOfWeek())) {
             awardWeeklyBonus(weekNumber);
         }
+        String weeklyBonusWinnerName = null;
+        if (Boolean.TRUE.equals(request.getIsLastGameOfWeek())) {
+            weeklyBonusWinnerName = weeklyBonusRepository.findByWeekNumber(weekNumber)
+                    .map(wb -> wb.getPlayer().getName())
+                    .orElse(null);
+        }
+        discordService.postMatchUpdate(
+                request.getMatchNumber(),
+                first.getName(),
+                second.getName(),
+                third.getName(),
+                Boolean.TRUE.equals(request.getIsLastGameOfWeek()),
+                weeklyBonusWinnerName
+        );
     }
 
     private void awardWeeklyBonus(Integer weekNumber) {
@@ -119,6 +136,14 @@ public class MatchService {
         return result;
     }
 
+    public int getCurrentWeekNumber() {
+        return matchRepository.findAll()
+                .stream()
+                .filter(m -> Boolean.TRUE.equals(m.getIsCompleted()) && m.getWeekNumber() != null)
+                .mapToInt(m -> m.getWeekNumber())
+                .max()
+                .orElse(1);
+    }
     public List<WeeklyLeaderboardDTO> getWeeklyLeaderboard(Integer weekNumber) {
         List<Object[]> rows = matchResultRepository.getWeeklyLeaderboard(weekNumber);
         List<WeeklyLeaderboardDTO> result = new ArrayList<>();
@@ -162,4 +187,26 @@ public class MatchService {
         }
         return result;
     }
+
+    public int getLastCompletedMatchNumber() {
+        return matchRepository.findAll()
+                .stream()
+                .filter(m -> Boolean.TRUE.equals(m.getIsCompleted()))
+                .mapToInt(Match::getMatchNumber)
+                .max()
+                .orElseThrow(() -> new RuntimeException("No completed matches"));
+    }
+
+    public MatchTopThreeResult getMatchTopThree(int matchNumber) {
+        Match match = matchRepository.findByMatchNumber(matchNumber)
+                .orElseThrow(() -> new RuntimeException("Match not found"));
+        List<MatchResult> results = matchResultRepository.findByMatch(match);
+        String first = results.stream().filter(r -> r.getPosition() == 1).findFirst().map(r -> r.getPlayer().getName()).orElse("?");
+        String second = results.stream().filter(r -> r.getPosition() == 2).findFirst().map(r -> r.getPlayer().getName()).orElse("?");
+        String third = results.stream().filter(r -> r.getPosition() == 3).findFirst().map(r -> r.getPlayer().getName()).orElse("?");
+        return new MatchTopThreeResult(first, second, third);
+    }
+
+    // Simple inner record to hold the result
+    public record MatchTopThreeResult(String first, String second, String third) {}
 }
