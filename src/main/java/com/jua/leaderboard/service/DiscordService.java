@@ -130,9 +130,9 @@ public class DiscordService extends ListenerAdapter {
             sb.append("```\n");
             sb.append("🎮  LAST MATCH — MATCH ").append(lastMatch).append("\n");
             sb.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-            sb.append("🥇  ").append(topThree.getFirst()).append("\n");
-            sb.append("🥈  ").append(topThree.getSecond()).append("\n");
-            sb.append("🥉  ").append(topThree.getThird()).append("\n");
+            sb.append("🥇  ").append(topThree.first()).append("\n");
+            sb.append("🥈  ").append(topThree.second()).append("\n");
+            sb.append("🥉  ").append(topThree.third()).append("\n");
             sb.append("```");
             return sb.toString();
         } catch (Exception e) {
