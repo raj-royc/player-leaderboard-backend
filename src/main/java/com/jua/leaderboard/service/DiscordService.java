@@ -15,7 +15,6 @@ import org.springframework.context.annotation.Scope;
 import java.util.List;
 
 @Service
-@Scope("prototype")
 public class DiscordService extends ListenerAdapter {
 
     @Value("${DISCORD_CHANNEL_ID}")
