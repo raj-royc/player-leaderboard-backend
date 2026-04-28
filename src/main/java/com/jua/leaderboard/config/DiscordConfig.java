@@ -1,5 +1,6 @@
 package com.jua.leaderboard.config;
 
+import com.jua.leaderboard.service.DiscordListener;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -14,6 +15,9 @@ public class DiscordConfig {
     @Value("${DISCORD_BOT_TOKEN}")
     private String botToken;
 
+    @Value("${DISCORD_CHANNEL_ID}")
+    private String channelId;
+
     @Bean
     public JDA jda(DiscordService discordService) throws InterruptedException {
         JDA jda = JDABuilder.createDefault(botToken)
@@ -21,7 +25,7 @@ public class DiscordConfig {
                         GatewayIntent.GUILD_MESSAGES,
                         GatewayIntent.MESSAGE_CONTENT
                 )
-                .addEventListeners(discordService)
+                .addEventListeners(new DiscordListener(discordService, channelId))
                 .build();
         jda.awaitReady();
         System.out.println("Discord bot connected as: " + jda.getSelfUser().getName());

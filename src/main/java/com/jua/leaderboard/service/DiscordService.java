@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Scope;
 import java.util.List;
 
 @Service
-public class DiscordService extends ListenerAdapter {
+public class DiscordService {
 
     @Value("${DISCORD_CHANNEL_ID}")
     private String channelId;
@@ -27,16 +27,15 @@ public class DiscordService extends ListenerAdapter {
         this.matchService = matchService;
     }
 
-    @PostConstruct
-    public void init() {
-        System.out.println("DiscordService initialized. Watching channel ID: " + channelId);
-    }
     @Autowired
     public void setJda(@Lazy JDA jda) {
         this.jda = jda;
     }
 
-    // ─── Auto post after match submission ───────────────────────────────────
+    @PostConstruct
+    public void init() {
+        System.out.println("DiscordService initialized. Watching channel ID: " + channelId);
+    }
 
     public void postMatchUpdate(int matchNumber, String first, String second, String third,
                                 boolean isWeekEnd, String weeklyBonusWinner) {
@@ -64,34 +63,7 @@ public class DiscordService extends ListenerAdapter {
         channel.sendMessage(sb.toString()).queue();
     }
 
-    // ─── Discord command listener ────────────────────────────────────────────
-
-    @Override
-    public void onMessageReceived(MessageReceivedEvent event) {
-        System.out.println("Message received: " + event.getMessage().getContentRaw()
-                + " in channel: " + event.getChannel().getId());
-        if (event.getAuthor().isBot()) return;
-        if (!event.getChannel().getId().equals(channelId)) return;
-
-        String content = event.getMessage().getContentRaw().trim().toLowerCase();
-
-        switch (content) {
-            case "!showme" -> {
-                String msg = buildOverallMessage() + "\n"
-                        + buildWeeklyMessage() + "\n"
-                        + buildLastMatchMessage();
-                event.getChannel().sendMessage(msg).queue();
-            }
-            case "!leaderboard" -> event.getChannel().sendMessage(buildOverallMessage()).queue();
-            case "!weekly"      -> event.getChannel().sendMessage(buildWeeklyMessage()).queue();
-            case "!podium"      -> event.getChannel().sendMessage(buildPodiumMessage()).queue();
-            case "!missed"      -> event.getChannel().sendMessage(buildMissedMessage()).queue();
-        }
-    }
-
-    // ─── Message builders ────────────────────────────────────────────────────
-
-    private String buildOverallMessage() {
+    public String buildOverallMessage() {
         List<OverallLeaderboardDTO> overall = matchService.getOverallLeaderboard();
         StringBuilder sb = new StringBuilder();
         sb.append("```\n");
@@ -109,7 +81,7 @@ public class DiscordService extends ListenerAdapter {
         return sb.toString();
     }
 
-    private String buildWeeklyMessage() {
+    public String buildWeeklyMessage() {
         int currentWeek = matchService.getCurrentWeekNumber();
         List<WeeklyLeaderboardDTO> weekly = matchService.getWeeklyLeaderboard(currentWeek);
         StringBuilder sb = new StringBuilder();
@@ -130,7 +102,7 @@ public class DiscordService extends ListenerAdapter {
         return sb.toString();
     }
 
-    private String buildLastMatchMessage() {
+    public String buildLastMatchMessage() {
         try {
             int lastMatch = matchService.getLastCompletedMatchNumber();
             var topThree = matchService.getMatchTopThree(lastMatch);
@@ -148,7 +120,7 @@ public class DiscordService extends ListenerAdapter {
         }
     }
 
-    private String buildPodiumMessage() {
+    public String buildPodiumMessage() {
         List<PodiumDTO> podiums = matchService.getPodiumFinishes();
         StringBuilder sb = new StringBuilder();
         sb.append("```\n");
@@ -171,7 +143,7 @@ public class DiscordService extends ListenerAdapter {
         return sb.toString();
     }
 
-    private String buildMissedMessage() {
+    public String buildMissedMessage() {
         List<AbsenceDTO> absences = matchService.getAbsences();
         StringBuilder sb = new StringBuilder();
         sb.append("```\n");
