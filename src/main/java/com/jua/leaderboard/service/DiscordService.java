@@ -70,12 +70,16 @@ public class DiscordService {
         sb.append("🏆  OVERALL LEADERBOARD\n");
         sb.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
         for (OverallLeaderboardDTO entry : overall) {
-            String flag = entry.isIneligible() ? "  ⚠️ ineligible" : "";
-            sb.append(String.format("%-3s %-15s %s pts%s\n",
+            String prefix = entry.isIneligible() ? "✖ " : "  ";
+            String suffix = entry.isIneligible() ? "  [OUT]" : "";
+            String normFlag = entry.isNormalised() && !entry.isIneligible() ? " ~norm" : "";
+            sb.append(String.format("%-3s %s%-15s %.3f pts%s%s\n",
                     entry.getRank() + ".",
+                    prefix,
                     entry.getPlayerName(),
                     entry.getTotalPoints(),
-                    flag));
+                    normFlag,
+                    suffix));
         }
         sb.append("```");
         return sb.toString();

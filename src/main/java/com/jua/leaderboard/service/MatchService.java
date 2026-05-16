@@ -112,23 +112,34 @@ public class MatchService {
     }
 
     private void awardWeeklyBonus(Integer weekNumber) {
-        // Guard — don't double award if somehow called twice
         if (weeklyBonusRepository.existsByWeekNumber(weekNumber)) return;
 
         List<Object[]> rows = matchResultRepository.getWeeklyPointsForBonus(weekNumber);
         if (rows.isEmpty()) return;
 
-        // First row is the winner after tiebreaker ordering in the query
-        Object[] winner = rows.get(0);
-        Integer winnerId = (Integer) winner[0];
-        Player winnerPlayer = playerRepository.findById(winnerId)
-                .orElseThrow(() -> new RuntimeException("Winner player not found"));
+        // Find first eligible player
+        for (Object[] row : rows) {
+            Integer winnerId = (Integer) row[0];
+            Long absences = matchAbsenceRepository.getAbsenceCounts()
+                    .stream()
+                    .filter(r -> r[0].equals(winnerId))
+                    .map(r -> (Long) r[2])
+                    .findFirst()
+                    .orElse(0L);
 
-        weeklyBonusRepository.save(new WeeklyBonus(null, winnerPlayer, weekNumber, 2));
+            if (absences <= 14) {
+                Player winnerPlayer = playerRepository.findById(winnerId)
+                        .orElseThrow(() -> new RuntimeException("Winner player not found"));
+                weeklyBonusRepository.save(new WeeklyBonus(null, winnerPlayer, weekNumber, 2));
+                return;
+            }
+        }
     }
 
     public List<OverallLeaderboardDTO> getOverallLeaderboard() {
         List<Object[]> rows = matchResultRepository.getOverallLeaderboard();
+
+        // Build absence map — player_id -> total absences (manual + logged)
         Map<Integer, Long> absenceMap = matchAbsenceRepository.getAbsenceCounts()
                 .stream()
                 .collect(Collectors.toMap(
@@ -136,16 +147,62 @@ public class MatchService {
                         r -> (Long) r[2]
                 ));
 
+        // Build attended matches map — player_id -> matches attended
+        Map<Integer, Long> attendedMap = matchResultRepository.getAttendedMatchCountPerPlayer()
+                .stream()
+                .collect(Collectors.toMap(
+                        r -> (Integer) r[0],
+                        r -> (Long) r[1]
+                ));
+
         List<OverallLeaderboardDTO> result = new ArrayList<>();
-        int rank = 1;
+
         for (Object[] row : rows) {
             Integer playerId = (Integer) row[0];
             String playerName = (String) row[1];
-            Long totalPoints = ((Number) row[2]).longValue();
+            double rawPoints = ((Number) row[2]).doubleValue();
+
             Long absences = absenceMap.getOrDefault(playerId, 0L);
             boolean ineligible = absences > 14;
-            result.add(new OverallLeaderboardDTO(rank++, playerId, playerName, totalPoints, ineligible));
+
+            long attended = attendedMap.getOrDefault(playerId, 0L);
+            boolean isNormalised = attended > 60;
+
+            double finalPoints;
+            if (isNormalised) {
+                // formula: (total points / matches attended) * 60, to 3 decimal places
+                finalPoints = Math.round((rawPoints / attended) * 60 * 1000.0) / 1000.0;
+            } else {
+                finalPoints = rawPoints;
+            }
+
+            // ineligible players get 0 points for ranking purposes
+            double rankingPoints = ineligible ? 0.0 : finalPoints;
+
+            result.add(new OverallLeaderboardDTO(
+                    0, // rank assigned after sorting
+                    playerId,
+                    playerName,
+                    rankingPoints,
+                    ineligible,
+                    (int) attended,
+                    isNormalised
+            ));
         }
+
+        // Sort — ineligible always go to bottom, then by points desc
+        result.sort((a, b) -> {
+            if (a.isIneligible() && !b.isIneligible()) return 1;
+            if (!a.isIneligible() && b.isIneligible()) return -1;
+            return Double.compare(b.getTotalPoints(), a.getTotalPoints());
+        });
+
+        // Assign ranks after sorting
+        int rank = 1;
+        for (OverallLeaderboardDTO entry : result) {
+            entry.setRank(rank++);
+        }
+
         return result;
     }
 

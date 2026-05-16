@@ -11,6 +11,8 @@ public class OverallLeaderboardDTO {
     private Integer rank;
     private Integer playerId;
     private String playerName;
-    private Long totalPoints;
-    private boolean ineligible; // true if absences > 14
+    private Double totalPoints;
+    private boolean ineligible;
+    private Integer matchesAttended;
+    private boolean isNormalised;
 }

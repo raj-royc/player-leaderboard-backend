@@ -78,4 +78,12 @@ public interface MatchResultRepository extends JpaRepository<MatchResult, Intege
         ORDER BY mr.player.name ASC
     """)
     List<Object[]> getPodiumFinishes();
+
+    @Query("""
+    SELECT mr.player.id, COUNT(DISTINCT mr.match.id)
+    FROM MatchResult mr
+    WHERE mr.match.isCompleted = true
+    GROUP BY mr.player.id
+""")
+    List<Object[]> getAttendedMatchCountPerPlayer();
 }
