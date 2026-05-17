@@ -130,13 +130,15 @@ public class DiscordService {
         sb.append("```\n");
         sb.append("🎖️  PODIUM FINISHES\n");
         sb.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-        sb.append(String.format("%-15s  🥇 / 🥈 / 🥉\n", "Player"));
+        sb.append(String.format("%-3s %-15s  🥇 / 🥈 / 🥉\n", "", "Player"));
         sb.append("──────────────────────────────\n");
         if (podiums.isEmpty()) {
             sb.append("No data yet.\n");
         } else {
+            int rank = 1;
             for (PodiumDTO entry : podiums) {
-                sb.append(String.format("%-15s  %s/%s/%s\n",
+                sb.append(String.format("%-3s %-15s  %s/%s/%s\n",
+                        rank++ + ".",
                         entry.getPlayerName(),
                         entry.getFirstPlace(),
                         entry.getSecondPlace(),

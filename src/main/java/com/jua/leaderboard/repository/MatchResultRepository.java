@@ -67,16 +67,18 @@ public interface MatchResultRepository extends JpaRepository<MatchResult, Intege
     """)
     List<Object[]> getWeeklyPointsForBonus(@Param("weekNumber") Integer weekNumber);
 
-    // Podium finishes
     @Query("""
-        SELECT mr.player.id, mr.player.name,
-               SUM(CASE WHEN mr.position = 1 THEN 1 ELSE 0 END),
-               SUM(CASE WHEN mr.position = 2 THEN 1 ELSE 0 END),
-               SUM(CASE WHEN mr.position = 3 THEN 1 ELSE 0 END)
-        FROM MatchResult mr
-        GROUP BY mr.player.id, mr.player.name
-        ORDER BY mr.player.name ASC
-    """)
+    SELECT mr.player.id, mr.player.name,
+           SUM(CASE WHEN mr.position = 1 THEN 1 ELSE 0 END),
+           SUM(CASE WHEN mr.position = 2 THEN 1 ELSE 0 END),
+           SUM(CASE WHEN mr.position = 3 THEN 1 ELSE 0 END)
+    FROM MatchResult mr
+    GROUP BY mr.player.id, mr.player.name
+    ORDER BY
+        SUM(CASE WHEN mr.position = 1 THEN 1 ELSE 0 END) DESC,
+        SUM(CASE WHEN mr.position = 2 THEN 1 ELSE 0 END) DESC,
+        SUM(CASE WHEN mr.position = 3 THEN 1 ELSE 0 END) DESC
+""")
     List<Object[]> getPodiumFinishes();
 
     @Query("""

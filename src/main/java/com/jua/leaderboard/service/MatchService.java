@@ -171,7 +171,7 @@ public class MatchService {
             double finalPoints;
             if (isNormalised) {
                 // formula: (total points / matches attended) * 60, to 3 decimal places
-                finalPoints = Math.round((rawPoints / attended) * 60 * 1000.0) / 1000.0;
+                finalPoints = Math.round((rawPoints / attended) * 59 * 1000.0) / 1000.0;
             } else {
                 finalPoints = rawPoints;
             }
