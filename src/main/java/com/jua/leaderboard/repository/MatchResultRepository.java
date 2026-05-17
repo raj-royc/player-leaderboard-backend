@@ -88,4 +88,37 @@ public interface MatchResultRepository extends JpaRepository<MatchResult, Intege
     GROUP BY mr.player.id
 """)
     List<Object[]> getAttendedMatchCountPerPlayer();
+
+
+    //changes for analytics tab
+
+    // Cumulative — each player's points per match in match number order
+    @Query("""
+    SELECT mr.player.id, mr.player.name, mr.match.matchNumber, mr.pointsAwarded
+    FROM MatchResult mr
+    WHERE mr.match.isCompleted = true
+    ORDER BY mr.match.matchNumber ASC
+""")
+    List<Object[]> getCumulativePointsData();
+
+    // Form — last 5 matches a player attended or was absent from
+    @Query("""
+    SELECT m.matchNumber, mr.position, mr.pointsAwarded
+    FROM Match m
+    LEFT JOIN MatchResult mr ON mr.match = m AND mr.player.id = :playerId
+    WHERE m.isCompleted = true
+    ORDER BY m.matchNumber DESC
+""")
+    List<Object[]> getPlayerMatchHistory(@Param("playerId") Integer playerId);
+
+    // Podium rate — attended and podium count per player
+    @Query("""
+    SELECT mr.player.id, mr.player.name,
+           COUNT(mr.id),
+           SUM(CASE WHEN mr.position IN (1,2,3) THEN 1 ELSE 0 END)
+    FROM MatchResult mr
+    GROUP BY mr.player.id, mr.player.name
+    ORDER BY mr.player.name ASC
+""")
+    List<Object[]> getPodiumRateData();
 }

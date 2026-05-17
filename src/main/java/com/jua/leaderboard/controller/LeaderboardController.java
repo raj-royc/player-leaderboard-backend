@@ -90,4 +90,20 @@ public class LeaderboardController {
         return ResponseEntity.ok(response);
     }
 
+    //changes for analytics tab
+    @GetMapping("/analytics/cumulative")
+    public ResponseEntity<List<CumulativeDataDTO>> getCumulativeData() {
+        return ResponseEntity.ok(matchService.getCumulativeData());
+    }
+
+    @GetMapping("/analytics/form/{playerId}")
+    public ResponseEntity<FormDataDTO> getPlayerForm(@PathVariable Integer playerId) {
+        return ResponseEntity.ok(matchService.getPlayerForm(playerId));
+    }
+
+    @GetMapping("/analytics/podium-rate")
+    public ResponseEntity<List<PodiumRateDTO>> getPodiumRate() {
+        return ResponseEntity.ok(matchService.getPodiumRateData());
+    }
+
 }

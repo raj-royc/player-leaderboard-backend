@@ -279,4 +279,69 @@ public class MatchService {
 
     // Simple inner record to hold the result
     public record MatchTopThreeResult(String first, String second, String third) {}
+
+    //changes for Analytics tab
+
+    public List<CumulativeDataDTO> getCumulativeData() {
+        List<Object[]> rows = matchResultRepository.getCumulativePointsData();
+
+        // Group by player
+        Map<Integer, CumulativeDataDTO> playerMap = new java.util.LinkedHashMap<>();
+
+        for (Object[] row : rows) {
+            Integer playerId = (Integer) row[0];
+            String playerName = (String) row[1];
+            Integer matchNumber = (Integer) row[2];
+            Integer points = ((Number) row[3]).intValue();
+
+            playerMap.putIfAbsent(playerId, new CumulativeDataDTO(playerId, playerName, new ArrayList<>()));
+            CumulativeDataDTO dto = playerMap.get(playerId);
+
+            int cumulative = dto.getMatches().isEmpty() ? points
+                    : dto.getMatches().get(dto.getMatches().size() - 1).getCumulative() + points;
+
+            dto.getMatches().add(new CumulativeDataDTO.MatchPointDTO(matchNumber, points, cumulative));
+        }
+
+        return new ArrayList<>(playerMap.values());
+    }
+
+    public FormDataDTO getPlayerForm(Integer playerId) {
+        Player player = playerRepository.findById(playerId)
+                .orElseThrow(() -> new RuntimeException("Player not found"));
+
+        List<Object[]> rows = matchResultRepository.getPlayerMatchHistory(playerId);
+
+        // Take last 5 only
+        List<FormDataDTO.FormMatchDTO> recentMatches = rows.stream()
+                .limit(5)
+                .map(row -> {
+                    Integer matchNumber = (Integer) row[0];
+                    Integer position = row[1] != null ? ((Number) row[1]).intValue() : null;
+                    Integer points = row[2] != null ? ((Number) row[2]).intValue() : null;
+                    String result = position == null ? "absent"
+                            : position == 1 ? "1st"
+                            : position == 2 ? "2nd" : "3rd";
+                    return new FormDataDTO.FormMatchDTO(matchNumber, position, points, result);
+                })
+                .collect(Collectors.toList());
+
+        return new FormDataDTO(playerId, player.getName(), recentMatches);
+    }
+
+    public List<PodiumRateDTO> getPodiumRateData() {
+        List<Object[]> rows = matchResultRepository.getPodiumRateData();
+        List<PodiumRateDTO> result = new ArrayList<>();
+        for (Object[] row : rows) {
+            Integer playerId = (Integer) row[0];
+            String playerName = (String) row[1];
+            Long attended = (Long) row[2];
+            Long podiums = (Long) row[3];
+            double rate = attended > 0 ? Math.round((podiums * 100.0 / attended) * 10) / 10.0 : 0.0;
+            result.add(new PodiumRateDTO(playerId, playerName, attended, podiums, rate));
+        }
+        result.sort((a, b) -> Double.compare(b.getPodiumRate(), a.getPodiumRate()));
+        return result;
+    }
+
 }
